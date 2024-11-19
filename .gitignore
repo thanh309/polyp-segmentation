@@ -163,3 +163,4 @@ cython_debug/
 
 # TODO: comment this out on last commit
 checkpoints/
+data/
