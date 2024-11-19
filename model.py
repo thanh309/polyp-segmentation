@@ -5,7 +5,7 @@ from resnet50 import resnet50
 import numpy as np
 import cv2
 
-RESNET50_PATH = ''
+RESNET50_PATH = 'checkpoints/resnet50-19c8e357.pth'
 
 def save_feats_mean(x):
     b, c, h, w = x.shape
@@ -66,7 +66,7 @@ class Bottleneck(nn.Module):
             nn.ReLU()
         )
 
-        encoder_layer = nn.TransformerEncoderLayer(d_model=dim, nhead=8)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=dim, nhead=8, batch_first=True)
         self.tblock = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
 
         self.conv2 = nn.Sequential(
@@ -163,7 +163,7 @@ class TResUnet(nn.Module):
         self.d3 = DecoderBlock([128, 64], 64)
         self.d4 = DecoderBlock([64, 3], 32)
 
-        self.output = nn.Conv2d(32, 1, kernel_size=1)
+        self.output = nn.Conv2d(32, 3, kernel_size=1)
 
     def forward(self, x, heatmap=None):
         s0 = x
