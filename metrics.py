@@ -37,9 +37,10 @@ class DiceBCELoss(nn.Module):
 
         return Dice_BCE
 
-class DiceLossMultipleClasses(nn.Module):
+
+class DiceBCELossMultipleClasses(nn.Module):
     def __init__(self, n_classes=3):
-        super(DiceLossMultipleClasses, self).__init__()
+        super(DiceBCELossMultipleClasses, self).__init__()
         self.n_classes = n_classes
 
     def _one_hot_encoder(self, input_tensor):
@@ -51,6 +52,7 @@ class DiceLossMultipleClasses(nn.Module):
         return output_tensor.float()
 
     def _dice_loss(self, score, target):
+        score = score.float()
         target = target.float()
         smooth = 1e-5
         intersect = torch.sum(score * target)
@@ -58,9 +60,10 @@ class DiceLossMultipleClasses(nn.Module):
         z_sum = torch.sum(score * score)
         loss = (2 * intersect + smooth) / (z_sum + y_sum + smooth)
         loss = 1 - loss
-        return loss
+        BCE = F.binary_cross_entropy(score.reshape(-1), target.reshape(-1), reduction='mean')
+        return loss + BCE
 
-    def forward(self, inputs, target, weight=None, softmax=False):
+    def forward(self, inputs, target, weight=None, softmax=True):
         if softmax:
             inputs = torch.softmax(inputs, dim=1)
         target = self._one_hot_encoder(target)
@@ -101,3 +104,27 @@ def jac_score(y_true, y_pred):
     intersection = (y_true * y_pred).sum()
     union = y_true.sum() + y_pred.sum() - intersection
     return (intersection + 1e-15) / (union + 1e-15)
+
+
+if __name__ == '__main__':
+    dice_loss = DiceBCELossMultipleClasses(n_classes=2)
+
+    target = torch.tensor([
+        [1, 0],  # Ground truth for the first pixel is class 0, others are class 1
+        [1, 0]
+    ]).unsqueeze(0)  # Shape: [1, 2, 2]
+
+
+    inputs_perfect = torch.tensor([
+        [[0, 1], [0, 1]],
+        [[1, 0], [1, 0]]
+    ]).unsqueeze(0)  # Perfect predictions
+    loss_perfect = dice_loss(inputs_perfect, target, softmax=False)
+    print(f"Perfect overlap Dice Loss: {loss_perfect.item():.4f}")
+
+    inputs_no_overlap = torch.tensor([
+        [[1, 0], [1, 0]],
+        [[0, 1], [0, 1]]
+    ]).unsqueeze(0)  # Completely wrong predictions
+    loss_no_overlap = dice_loss(inputs_no_overlap, target, softmax=False)
+    print(f"No overlap Dice Loss: {loss_no_overlap.item():.4f}")
