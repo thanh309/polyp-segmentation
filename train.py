@@ -1,4 +1,4 @@
-
+import wandb
 import os
 import time
 import datetime
@@ -16,9 +16,10 @@ from sklearn.model_selection import train_test_split
 image_size = 256
 size = (image_size, image_size)
 batch_size = 8
-num_epochs = 20
+num_epochs = 200
 lr = 1e-4
 early_stopping_patience = 10
+lr_scheduler_patience = 5
 
 checkpoint_path = 'checkpoints/checkpoint.pth'
 data_path = 'data'
@@ -72,8 +73,6 @@ def read_mask(mask_path, size):
     green_mask[green_mask != 0] = 1
 
     full_mask = cv2.bitwise_or(red_mask, green_mask)
-    # full_mask = full_mask.astype(np.uint8)
-    # full_mask = cv2.morphologyEx(full_mask, cv2.MORPH_CLOSE, np.ones((5, 5)), iterations=1)
 
     return full_mask
 
@@ -110,38 +109,6 @@ class BKAIIGHNeoDataset(Dataset):
 
         return np.asarray(image), np.asarray(mask)
 
-
-# class DATASET(Dataset):
-#     def __init__(self, images_path, masks_path, size, transform=None):
-#         super().__init__()
-
-#         self.images_path = images_path
-#         self.masks_path = masks_path
-#         self.transform = transform
-#         self.n_samples = len(images_path)
-#         self.size = size
-
-#     def __getitem__(self, index):
-#         image = cv2.imread(self.images_path[index], cv2.IMREAD_COLOR)
-#         mask = cv2.imread(self.masks_path[index], cv2.IMREAD_GRAYSCALE)
-
-#         if self.transform is not None:
-#             augmentations = self.transform(image=image, mask=mask)
-#             image = augmentations['image']
-#             mask = augmentations['mask']
-
-#         image = cv2.resize(image, self.size)
-#         image = np.transpose(image, (2, 0, 1))
-#         image = image/255.0
-
-#         mask = cv2.resize(mask, self.size)
-#         mask = np.expand_dims(mask, axis=0)
-#         mask = mask/255.0
-
-#         return image, mask
-
-#     def __len__(self):
-#         return self.n_samples
 
 
 def train(model, loader, optimizer, loss_fn, device):
@@ -237,7 +204,7 @@ if __name__ == '__main__':
     model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=lr_scheduler_patience)
     loss_fn = DiceBCELossMultipleClasses()
     loss_name = 'BCE Dice Loss'
     data_str = f'Optimizer: Adam\nLoss: {loss_name}\n'
@@ -245,11 +212,29 @@ if __name__ == '__main__':
 
 
     # Start training
+    PROJECT = 'BKAI-IGH NeoPolyp'
+    RESUME = 'allow'
+    wandb.init(
+        project=PROJECT,
+        resume=RESUME,
+        name=datetime_object,
+        config={
+            'image_size': image_size,
+            'batch_size': batch_size,
+            'num_epochs': num_epochs,
+            'learning_rate_init': lr,
+            'early_stopping_patience': early_stopping_patience,
+            'lr_scheduler_patience': lr_scheduler_patience,
+            'loss': loss_name
+        }
+    )
+    wandb.watch(model)
 
     best_valid_loss = np.inf
     early_stopping_count = 0
 
     for epoch in range(num_epochs):
+        curr_lr = scheduler.get_last_lr()[0]
         start_time = time.time()
 
         train_loss = train(model, train_loader, optimizer, loss_fn, device)
@@ -270,12 +255,21 @@ if __name__ == '__main__':
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
-        data_str = f'Epoch: {epoch+1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s\n'
+        data_str = f'Epoch: {epoch+1:02} | Epoch time: {epoch_mins}m {epoch_secs}s | Current learning rate: {curr_lr}\n'
         data_str += f'\tTrain Loss: {train_loss:.4f}\n'
         data_str += f'\t Val. Loss: {valid_loss:.4f}\n'
+        wandb.log({
+            'epoch': epoch + 1,
+            'train_loss': train_loss,
+            'valid_loss': valid_loss,
+            'best_valid_loss': best_valid_loss,
+            'learning_rate': curr_lr
+        })
         print_and_save(train_log_path, data_str)
 
         if early_stopping_count == early_stopping_patience:
             data_str = f'Early stopping: validation loss stops improving from last {early_stopping_patience} epochs.\n'
             print_and_save(train_log_path, data_str)
             break
+    
+    wandb.finish()
