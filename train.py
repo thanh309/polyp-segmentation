@@ -167,8 +167,8 @@ if __name__ == '__main__':
     print_and_save(train_log_path, data_str)
 
     (train_x, train_y), (valid_x, valid_y) = load_data()
-    train_x = train_x[:100]
-    train_y = train_y[:100]
+    # train_x = train_x[:100]
+    # train_y = train_y[:100]
     data_str = f'Dataset size:\nTrain: {len(train_x)} - Valid: {len(valid_x)}\n'
     print_and_save(train_log_path, data_str)
 
