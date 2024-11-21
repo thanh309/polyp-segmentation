@@ -5,13 +5,13 @@ URL = 'https://download.pytorch.org/models/resnet50-19c8e357.pth'
 
 
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
-    """3x3 convolution with padding"""
+    '''3x3 convolution with padding'''
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                      padding=dilation, groups=groups, bias=False, dilation=dilation)
 
 
 def conv1x1(in_planes, out_planes, stride=1):
-    """1x1 convolution"""
+    '''1x1 convolution'''
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
 
@@ -29,7 +29,7 @@ class BasicBlock(nn.Module):
             )
         if dilation > 1:
             raise NotImplementedError(
-                "Dilation > 1 not supported in BasicBlock"
+                'Dilation > 1 not supported in BasicBlock'
             )
         # Both self.conv1 and self.downsample layers downsample the input when stride != 1
         self.conv1 = conv3x3(inplanes, planes, stride)
@@ -119,8 +119,8 @@ class ResNet(nn.Module):
             # the 2x2 stride with a dilated convolution instead
             replace_stride_with_dilation = [False, False, False]
         if len(replace_stride_with_dilation) != 3:
-            raise ValueError("replace_stride_with_dilation should be None "
-                             "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
+            raise ValueError('replace_stride_with_dilation should be None '
+                             'or a 3-element tuple, got {}'.format(replace_stride_with_dilation))
         self.groups = groups
         self.base_width = width_per_group
         self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
@@ -208,11 +208,11 @@ def _resnet50(path, block, layers, pretrained, **kwargs):
 
 
 def resnet50(path, pretrained=True, **kwargs):
-    r"""ResNet-50 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
+    r'''ResNet-50 model from
+    `'Deep Residual Learning for Image Recognition' <https://arxiv.org/pdf/1512.03385.pdf>`_
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-    """
+    '''
     return _resnet50(path, Bottleneck, [3, 4, 6, 3], pretrained, **kwargs)

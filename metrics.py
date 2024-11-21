@@ -120,11 +120,11 @@ if __name__ == '__main__':
         [[1, 0], [1, 0]]
     ]).unsqueeze(0)  # Perfect predictions
     loss_perfect = dice_loss(inputs_perfect, target, softmax=False)
-    print(f"Perfect overlap Dice Loss: {loss_perfect.item():.4f}")
+    print(f'Perfect overlap Dice Loss: {loss_perfect.item():.4f}')
 
     inputs_no_overlap = torch.tensor([
         [[1, 0], [1, 0]],
         [[0, 1], [0, 1]]
     ]).unsqueeze(0)  # Completely wrong predictions
     loss_no_overlap = dice_loss(inputs_no_overlap, target, softmax=False)
-    print(f"No overlap Dice Loss: {loss_no_overlap.item():.4f}")
+    print(f'No overlap Dice Loss: {loss_no_overlap.item():.4f}')

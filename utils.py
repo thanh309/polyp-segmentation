@@ -10,7 +10,7 @@ from sklearn.metrics import accuracy_score
 
 def seeding(seed):
     random.seed(seed)
-    os.environ["PYTHONHASHSEED"] = str(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -31,9 +31,9 @@ def epoch_time(start_time, end_time):
 
 def print_and_save(file_path, data_str):
     print(data_str)
-    with open(file_path, "a") as file:
+    with open(file_path, 'a') as file:
         file.write(data_str)
-        file.write("\n")
+        file.write('\n')
 
 
 def calculate_metrics(y_true, y_pred):

@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 # Hyperparameters
 image_size = 256
 size = (image_size, image_size)
-batch_size = 16
+batch_size = 8
 num_epochs = 20
 lr = 1e-4
 early_stopping_patience = 10
@@ -27,14 +27,17 @@ data_str = f'Image size: {size}\nBatch size: {batch_size}\nLR: {lr}\nEpochs: {nu
 data_str += f'Early stopping patience: {early_stopping_patience}\n'
 
 
-def load_data(data_path='data', val_ratio=0.1):
-    train_dir = os.path.join(data_path, 'train', 'train')
-    train_gt_dir = os.path.join(data_path, 'train_gt', 'train_gt')
+def load_data(
+        x_dir='data/train/train',
+        y_dir='data/train_gt/train_gt',
+        val_ratio=0.1
+    ):
 
-    train_files = os.listdir(train_dir)
-
-    train_x = [os.path.join(train_dir, f) for f in train_files]
-    train_y = [os.path.join(train_gt_dir, f) for f in train_files]
+    train_files = os.listdir(x_dir)
+    train_x = [os.path.join(x_dir, f) for f in train_files]
+    if not val_ratio:
+        return (train_x, None), (None, None)
+    train_y = [os.path.join(y_dir, f) for f in train_files]
 
     train_x, valid_x, train_y, valid_y = train_test_split(
         train_x, train_y, test_size=val_ratio, random_state=42
@@ -192,13 +195,13 @@ if __name__ == '__main__':
 
     datetime_object = str(datetime.datetime.now())
     print_and_save(train_log_path, datetime_object)
-    print('')
+    print('\n\n')
 
     print_and_save(train_log_path, data_str)
 
-    (train_x, train_y), (valid_x, valid_y) = load_data(data_path)
-    train_x = train_x[:50]
-    train_y = train_y[:50]
+    (train_x, train_y), (valid_x, valid_y) = load_data()
+    train_x = train_x[:100]
+    train_y = train_y[:100]
     data_str = f'Dataset size:\nTrain: {len(train_x)} - Valid: {len(valid_x)}\n'
     print_and_save(train_log_path, data_str)
 
@@ -234,7 +237,7 @@ if __name__ == '__main__':
     model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5)
     loss_fn = DiceBCELossMultipleClasses()
     loss_name = 'BCE Dice Loss'
     data_str = f'Optimizer: Adam\nLoss: {loss_name}\n'
@@ -254,7 +257,7 @@ if __name__ == '__main__':
         scheduler.step(valid_loss)
 
         if valid_loss < best_valid_loss:
-            data_str = f'Loss improved from {best_valid_loss:2.4f} to {valid_loss:2.4f}. Saving checkpoint at {checkpoint_path}...'
+            data_str = f'Val. loss improved from {best_valid_loss:2.4f} to {valid_loss:2.4f}. Saving checkpoint at {checkpoint_path}...'
             print_and_save(train_log_path, data_str)
 
             best_valid_loss = valid_loss

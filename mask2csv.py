@@ -68,7 +68,7 @@ def mask2string(dir):
 
 
 def main() -> None:
-    MASK_DIR_PATH = 'data/train_gt/train_gt'  # change this to the path to your output mask folder
+    MASK_DIR_PATH = 'data/test_res/test_res'  # change this to the path to your output mask folder
     dir = MASK_DIR_PATH
     res = mask2string(dir)
     df = pd.DataFrame(columns=['Id', 'Expected'])
