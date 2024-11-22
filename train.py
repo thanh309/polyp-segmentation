@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 # Hyperparameters
 image_size = 256
 size = (image_size, image_size)
-batch_size = 12
+batch_size = 8
 num_epochs = 200
 lr = 1e-4
 early_stopping_patience = 20
