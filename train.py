@@ -16,11 +16,13 @@ from sklearn.model_selection import train_test_split
 # Hyperparameters
 image_size = 256
 size = (image_size, image_size)
-batch_size = 8
+batch_size = 12
 num_epochs = 200
 lr = 1e-4
-early_stopping_patience = 10
+early_stopping_patience = 20
 lr_scheduler_patience = 5
+lr_scheduler_factor = 0.5
+aug_factor = 2
 
 checkpoint_path = 'checkpoints/checkpoint_tres.pth'
 data_path = 'data'
@@ -80,11 +82,15 @@ def read_mask(mask_path, size):
 
 class BKAIIGHNeoDataset(Dataset):
 
-    def __init__(self, images_path, masks_path, size, transform=None):
+    def __init__(self, images_path, masks_path, size, aug_factor=1, transform=None):
         self.images_path = images_path
         self.masks_path = masks_path
         self.transform = transform
-        self.n_samples = len(images_path)
+        assert aug_factor > 0, 'aug_factor must be greater than 0'
+        if aug_factor > 1:
+            assert transform != None, 'transform must be != None for aug_factor > 1' 
+        self.aug_factor = aug_factor
+        self.n_samples = len(images_path) * aug_factor
         self.size = size
 
     def __len__(self):
@@ -92,8 +98,10 @@ class BKAIIGHNeoDataset(Dataset):
 
     def __getitem__(self, idx):
 
-        img_path = self.images_path[idx]
-        mask_path = self.masks_path[idx]
+        original_idx = idx // self.aug_factor
+
+        img_path = self.images_path[original_idx]
+        mask_path = self.masks_path[original_idx]
 
         image = read_image(img_path, self.size)
         mask = read_mask(mask_path, self.size)
@@ -163,28 +171,41 @@ if __name__ == '__main__':
 
     datetime_object = str(datetime.datetime.now())
     print_and_save(train_log_path, datetime_object)
-    print('\n\n')
+    print('\n\n\n')
 
     print_and_save(train_log_path, data_str)
 
     (train_x, train_y), (valid_x, valid_y) = load_data()
     # train_x = train_x[:100]
     # train_y = train_y[:100]
-    data_str = f'Dataset size:\nTrain: {len(train_x)} - Valid: {len(valid_x)}\n'
-    print_and_save(train_log_path, data_str)
+
 
 
     transform =  A.Compose([
-        A.Rotate(limit=35, p=0.3),
-        A.HorizontalFlip(p=0.3),
-        A.VerticalFlip(p=0.3),
-        A.CoarseDropout(p=0.3, max_holes=10, max_height=24, max_width=24)
+        A.Rotate(limit=45, p=0.4, border_mode=cv2.BORDER_CONSTANT, value=0),
+        A.HorizontalFlip(p=0.4),
+        A.VerticalFlip(p=0.4),
+        A.RandomBrightnessContrast(
+            brightness_limit=0.2,
+            contrast_limit=0.2,
+            brightness_by_max=False,
+            p=0.5
+        ),
+        A.RGBShift(
+            r_shift_limit=5,
+            g_shift_limit=10,
+            b_shift_limit=5,
+            p=0.5
+        ),
+        # A.CoarseDropout(p=0.3, max_holes=10, max_height=24, max_width=24)
     ])
 
 
-    train_dataset = BKAIIGHNeoDataset(train_x, train_y, size, transform=transform)
-    valid_dataset = BKAIIGHNeoDataset(valid_x, valid_y, size, transform=None)
+    train_dataset = BKAIIGHNeoDataset(train_x, train_y, size, aug_factor, transform=transform)
+    valid_dataset = BKAIIGHNeoDataset(valid_x, valid_y, size)
 
+    data_str = f'Dataset size:\nTrain: {len(train_dataset)} - Valid: {len(valid_dataset)}\n'
+    print_and_save(train_log_path, data_str)
 
     train_loader = DataLoader(
         dataset=train_dataset,
@@ -206,7 +227,9 @@ if __name__ == '__main__':
     model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=lr_scheduler_patience)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, 'min', patience=lr_scheduler_patience, factor=lr_scheduler_factor
+    )
     loss_fn = DiceBCELossMultipleClasses()
     loss_name = 'BCE Dice Loss'
     data_str = f'Optimizer: Adam\nLoss: {loss_name}\n'
@@ -227,7 +250,9 @@ if __name__ == '__main__':
             'learning_rate_init': lr,
             'early_stopping_patience': early_stopping_patience,
             'lr_scheduler_patience': lr_scheduler_patience,
-            'loss': loss_name
+            'lr_scheduler_factor': lr_scheduler_factor,
+            'loss': loss_name,
+            'aug_factor': aug_factor
         }
     )
     wandb.watch(model)

@@ -32,18 +32,6 @@ def process_model_output(output_mask, target_size):
 
     return colorized_mask
 
-def clean_mask(colorized_mask, color_map):
-    cleaned_mask = np.zeros_like(colorized_mask)
-    for color in color_map.values():
-        lower_bound = np.array(color) - 10
-        upper_bound = np.array(color) + 10
-        mask = cv2.inRange(colorized_mask, lower_bound, upper_bound)
-
-        cleaned_mask[mask > 0] = color
-
-    return cleaned_mask
-
-
 def evaluate(model, save_path, test_x, size):
     colors = {
         0: (0, 0, 0),
@@ -69,7 +57,6 @@ def evaluate(model, save_path, test_x, size):
 
         y_pred = process_model_output(
             y_pred.cpu(), (original_shape[1], original_shape[0]))
-        y_pred = clean_mask(y_pred, color_map=colors)
         cv2.imwrite(f'{save_path}/{name}', y_pred)
 
 
