@@ -15,10 +15,13 @@ transform =  A.Compose([
 
 
 with np.printoptions(threshold=np.inf, linewidth=np.inf):
-    x = read_image('data/train/train/0bd55b1393e2ef89424de1556a26c8eb.jpeg', (100, 100))
-    y = read_mask('data/train_gt/train_gt/0bd55b1393e2ef89424de1556a26c8eb.jpeg', (100, 100))
-    aug = transform(image=x, mask=y)
-    x = aug['image']
-    y = aug['mask']
-    cv2.imwrite('img.jpeg', x)
-    print(y)
+    # x = read_image('data/train/train/0bd55b1393e2ef89424de1556a26c8eb.jpeg', (100, 100))
+    # y = read_mask('data/train_gt/train_gt/0bd55b1393e2ef89424de1556a26c8eb.jpeg', (100, 100))
+    # aug = transform(image=x, mask=y)
+    # x = aug['image']
+    # y = aug['mask']
+    # cv2.imwrite('img.jpeg', x)
+    # print(y)
+    x = cv2.imread('data/train_res/train_res/0aa5f7804c34a359bbb402345d341253.png')
+    res = x.sum(axis=(0, 1))
+    print(res)

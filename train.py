@@ -9,6 +9,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from utils import seeding, print_and_save, epoch_time
 from model import TResUnet
+# from model2 import RUPNet
 from metrics import DiceBCELossMultipleClasses
 from sklearn.model_selection import train_test_split
 
@@ -21,7 +22,7 @@ lr = 1e-4
 early_stopping_patience = 10
 lr_scheduler_patience = 5
 
-checkpoint_path = 'checkpoints/checkpoint.pth'
+checkpoint_path = 'checkpoints/checkpoint_tres.pth'
 data_path = 'data'
 
 data_str = f'Image size: {size}\nBatch size: {batch_size}\nLR: {lr}\nEpochs: {num_epochs}\n'
@@ -201,6 +202,7 @@ if __name__ == '__main__':
 
     device = torch.device('cuda')
     model = TResUnet()
+    # model = RUPNet()
     model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
