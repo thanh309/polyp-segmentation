@@ -185,8 +185,10 @@ if __name__ == '__main__':
     print('\n\n\n')
 
     print_and_save(train_log_path, data_str)
-
-    (train_x, train_y), (valid_x, valid_y) = load_data(val_ratio=val_ratio, image_list_from_csv='oversampled_data.csv')
+    if oversampling:
+        (train_x, train_y), (valid_x, valid_y) = load_data(val_ratio=val_ratio, image_list_from_csv='oversampled_data.csv')
+    else:
+        (train_x, train_y), (valid_x, valid_y) = load_data(val_ratio=val_ratio)
     # train_x = train_x[:100]
     # train_y = train_y[:100]
 
