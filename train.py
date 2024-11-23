@@ -16,15 +16,18 @@ from sklearn.model_selection import train_test_split
 # Hyperparameters
 image_size = 256
 size = (image_size, image_size)
+val_ratio = 0.2
 batch_size = 8
-num_epochs = 200
+num_epochs = 250
 lr = 1e-4
 early_stopping_patience = 20
 lr_scheduler_patience = 5
 lr_scheduler_factor = 0.5
 aug_factor = 2
+weight_decay = 1e-5
 
 checkpoint_path = 'checkpoints/checkpoint_tres.pth'
+# checkpoint_path = 'checkpoints/checkpoint_rup.pth'
 data_path = 'data'
 
 data_str = f'Image size: {size}\nBatch size: {batch_size}\nLR: {lr}\nEpochs: {num_epochs}\n'
@@ -175,7 +178,7 @@ if __name__ == '__main__':
 
     print_and_save(train_log_path, data_str)
 
-    (train_x, train_y), (valid_x, valid_y) = load_data()
+    (train_x, train_y), (valid_x, valid_y) = load_data(val_ratio=val_ratio)
     # train_x = train_x[:100]
     # train_y = train_y[:100]
 
@@ -226,7 +229,7 @@ if __name__ == '__main__':
     # model = RUPNet()
     model = model.to(device)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, 'min', patience=lr_scheduler_patience, factor=lr_scheduler_factor
     )
@@ -245,6 +248,7 @@ if __name__ == '__main__':
         name=datetime_object,
         config={
             'image_size': image_size,
+            'val_ratio': val_ratio,
             'batch_size': batch_size,
             'num_epochs': num_epochs,
             'learning_rate_init': lr,
@@ -252,7 +256,8 @@ if __name__ == '__main__':
             'lr_scheduler_patience': lr_scheduler_patience,
             'lr_scheduler_factor': lr_scheduler_factor,
             'loss': loss_name,
-            'aug_factor': aug_factor
+            'aug_factor': aug_factor,
+            'weight_decay': weight_decay
         }
     )
     wandb.watch(model)

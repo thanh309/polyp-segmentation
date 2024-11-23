@@ -33,11 +33,6 @@ def process_model_output(output_mask, target_size):
     return colorized_mask
 
 def evaluate(model, save_path, test_x, size):
-    colors = {
-        0: (0, 0, 0),
-        1: (0, 255, 0),
-        2: (0, 0, 255)
-    }
     for x in tqdm(test_x):
         name = x.split("/")[-1].split('.')[0] + '.png'
 
@@ -68,6 +63,7 @@ if __name__ == '__main__':
     # model = RUPNet()
     model = model.to(device)
     checkpoint_path = 'checkpoints/checkpoint_tres.pth'
+    # checkpoint_path = 'checkpoints/checkpoint_rup.pth'
     model.load_state_dict(torch.load(
         checkpoint_path, map_location=device, weights_only=True))
     model.eval()
