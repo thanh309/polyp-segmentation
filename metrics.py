@@ -78,6 +78,46 @@ class DiceBCELossMultipleClasses(nn.Module):
             loss += dice * weight[i]
         return loss / self.n_classes
 
+class FocalTverskyBCELoss(nn.Module):
+    def __init__(self, n_classes=3):
+        super(FocalTverskyBCELoss, self).__init__()
+        self.n_classes = n_classes
+
+    def _one_hot_encoder(self, input_tensor):
+        tensor_list = []
+        for i in range(self.n_classes):
+            temp_prob = input_tensor == i
+            tensor_list.append(temp_prob.unsqueeze(1))
+        output_tensor = torch.cat(tensor_list, dim=1)
+        return output_tensor.float()
+
+    def _loss(self, score, target, alpha=0.3, gamma=4/3):
+        score = score.float()
+        target = target.float()
+        smooth = 1e-5
+        TP = torch.sum(score * target)
+        FP = torch.sum(score * (1 - target))
+        FN = torch.sum((1 - score) * target)
+        tversky_index = (TP + smooth) / (TP + alpha * FP + (1 - alpha) * FN + smooth)
+        focal_tversky_loss = (1 - tversky_index) ** (1/gamma)
+        BCE = F.binary_cross_entropy(score.reshape(-1), target.reshape(-1), reduction='mean')
+        return (focal_tversky_loss + BCE) / 2
+
+
+    def forward(self, inputs, target, weight=None, softmax=True):
+        if softmax:
+            inputs = torch.softmax(inputs, dim=1)
+        target = self._one_hot_encoder(target)
+        if weight is None:
+            weight = [1] * self.n_classes
+        assert inputs.size() == target.size(), 'predict {} & target {} shape do not match'.format(inputs.size(), target.size())
+        class_wise_dice = []
+        loss = 0.0
+        for i in range(0, self.n_classes):
+            dice = self._loss(inputs[:, i], target[:, i])
+            class_wise_dice.append(1.0 - dice.item())
+            loss += dice * weight[i]
+        return loss / self.n_classes
 
 
 def precision(y_true, y_pred):

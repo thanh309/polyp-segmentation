@@ -6,11 +6,12 @@ import numpy as np
 import albumentations as A
 import cv2
 import torch
+from pandas import read_csv
 from torch.utils.data import Dataset, DataLoader
 from utils import seeding, print_and_save, epoch_time
 from model import TResUnet
 # from model2 import RUPNet
-from metrics import DiceBCELossMultipleClasses
+from metrics import DiceBCELossMultipleClasses, FocalTverskyBCELoss
 from sklearn.model_selection import train_test_split
 
 # Hyperparameters
@@ -20,11 +21,12 @@ val_ratio = 0.2
 batch_size = 8
 num_epochs = 250
 lr = 1e-4
-early_stopping_patience = 20
+early_stopping_patience = 25
 lr_scheduler_patience = 5
 lr_scheduler_factor = 0.5
-aug_factor = 2
+aug_factor = 1
 weight_decay = 1e-5
+oversampling = True
 
 checkpoint_path = 'checkpoints/checkpoint_tres.pth'
 # checkpoint_path = 'checkpoints/checkpoint_rup.pth'
@@ -37,10 +39,14 @@ data_str += f'Early stopping patience: {early_stopping_patience}\n'
 def load_data(
         x_dir='data/train/train',
         y_dir='data/train_gt/train_gt',
-        val_ratio=0.1
+        val_ratio=0.1,
+        image_list_from_csv=None
     ):
-
-    train_files = os.listdir(x_dir)
+    if image_list_from_csv:
+        df = read_csv(image_list_from_csv, header=None)
+        train_files = df.iloc[:, 0].tolist()
+    else:
+        train_files = os.listdir(x_dir)
     train_x = [os.path.join(x_dir, f) for f in train_files]
     if not val_ratio:
         return (train_x, None), (None, None)
@@ -55,14 +61,16 @@ def load_data(
 
 def read_image(image_path, size):
     image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-    image = cv2.resize(image, size)
+    if size:
+        image = cv2.resize(image, size)
     return image
 
 
 def read_mask(mask_path, size):
     image = cv2.imread(mask_path)
 
-    image = cv2.resize(image, size)
+    if size:
+        image = cv2.resize(image, size)
 
     image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     lower1 = np.array([0, 100, 20])
@@ -178,7 +186,7 @@ if __name__ == '__main__':
 
     print_and_save(train_log_path, data_str)
 
-    (train_x, train_y), (valid_x, valid_y) = load_data(val_ratio=val_ratio)
+    (train_x, train_y), (valid_x, valid_y) = load_data(val_ratio=val_ratio, image_list_from_csv='oversampled_data.csv')
     # train_x = train_x[:100]
     # train_y = train_y[:100]
 
@@ -192,13 +200,13 @@ if __name__ == '__main__':
             brightness_limit=0.2,
             contrast_limit=0.2,
             brightness_by_max=False,
-            p=0.5
+            p=0.7
         ),
         A.RGBShift(
             r_shift_limit=5,
             g_shift_limit=10,
             b_shift_limit=5,
-            p=0.5
+            p=0.7
         ),
         # A.CoarseDropout(p=0.3, max_holes=10, max_height=24, max_width=24)
     ])
@@ -233,8 +241,12 @@ if __name__ == '__main__':
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, 'min', patience=lr_scheduler_patience, factor=lr_scheduler_factor
     )
-    loss_fn = DiceBCELossMultipleClasses()
-    loss_name = 'BCE Dice Loss'
+
+    # loss_fn = DiceBCELossMultipleClasses()
+    # loss_name = 'BCE Dice Loss'
+    loss_fn = FocalTverskyBCELoss()
+    loss_name = 'Focal Tversky BCE Loss'
+
     data_str = f'Optimizer: Adam\nLoss: {loss_name}\n'
     print_and_save(train_log_path, data_str)
 
@@ -249,6 +261,8 @@ if __name__ == '__main__':
         config={
             'image_size': image_size,
             'val_ratio': val_ratio,
+            'train_size:': len(train_dataset),
+            'valid_size': len(valid_dataset),
             'batch_size': batch_size,
             'num_epochs': num_epochs,
             'learning_rate_init': lr,
@@ -257,7 +271,8 @@ if __name__ == '__main__':
             'lr_scheduler_factor': lr_scheduler_factor,
             'loss': loss_name,
             'aug_factor': aug_factor,
-            'weight_decay': weight_decay
+            'weight_decay': weight_decay,
+            'oversampling': oversampling
         }
     )
     wandb.watch(model)

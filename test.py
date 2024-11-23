@@ -62,7 +62,7 @@ if __name__ == '__main__':
     model = TResUnet()
     # model = RUPNet()
     model = model.to(device)
-    checkpoint_path = 'checkpoints/checkpoint_tres.pth'
+    checkpoint_path = 'checkpoints/checkpoint_tres75380.pth'
     # checkpoint_path = 'checkpoints/checkpoint_rup.pth'
     model.load_state_dict(torch.load(
         checkpoint_path, map_location=device, weights_only=True))
