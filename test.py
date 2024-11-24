@@ -3,7 +3,6 @@ import cv2
 from tqdm import tqdm
 import torch
 from model import TResUnet
-# from model2 import RUPNet
 from utils import seeding
 from train import load_data
 
@@ -60,10 +59,8 @@ if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = TResUnet()
-    # model = RUPNet()
     model = model.to(device)
-    checkpoint_path = 'checkpoints/checkpoint_tres75380.pth'
-    # checkpoint_path = 'checkpoints/checkpoint_rup.pth'
+    checkpoint_path = 'checkpoints/checkpoint_tres.pth'
     model.load_state_dict(torch.load(
         checkpoint_path, map_location=device, weights_only=True))
     model.eval()
