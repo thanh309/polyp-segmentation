@@ -47,8 +47,8 @@ def oversample(csv_path, output_size=None):
 csv_path = "mask_analysis.csv"
 oversample_path = "oversampled_data.csv"
 
-oversampled_df = oversample(csv_path)
-oversampled_df.to_csv(oversample_path, index=False, header=False)
+# oversampled_df = oversample(csv_path)
+# oversampled_df.to_csv(oversample_path, index=False, header=False)
 
 # test oversampling result
 df_before = pd.read_csv(csv_path, header=None, names=["filename", "class1", "class2"])

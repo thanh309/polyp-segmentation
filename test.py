@@ -53,6 +53,24 @@ def evaluate(model, save_path, test_x, size):
             y_pred.cpu(), (original_shape[1], original_shape[0]))
         cv2.imwrite(f'{save_path}/{name}', y_pred)
 
+def eval_single(model, output_path, x, size, device):
+    image = cv2.imread(x, cv2.IMREAD_COLOR)
+    original_shape = image.shape[:-1]
+    image = cv2.resize(image, size)
+
+    model_inp = np.transpose(image, (2, 0, 1))
+    model_inp = model_inp/255.0
+    model_inp = np.expand_dims(model_inp, axis=0)
+    model_inp = model_inp.astype(np.float32)
+    model_inp = torch.from_numpy(model_inp)
+    model_inp = model_inp.to(device)
+
+    with torch.no_grad():
+        y_pred = model(model_inp)
+
+    y_pred = process_model_output(
+        y_pred.cpu(), (original_shape[1], original_shape[0]))
+    cv2.imwrite(output_path, y_pred)
 
 if __name__ == '__main__':
     seeding(42)
@@ -60,7 +78,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = TResUnet()
     model = model.to(device)
-    checkpoint_path = 'checkpoints/checkpoint_tres.pth'
+    checkpoint_path = 'checkpoints/checkpoint_tres78798.pth'
     model.load_state_dict(torch.load(
         checkpoint_path, map_location=device, weights_only=True))
     model.eval()
