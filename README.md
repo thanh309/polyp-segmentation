@@ -1,6 +1,6 @@
 # TResUNet-Neo: Implementation of TransResUNet for colon polyp neoplasm detection and segmentation
 
-This is my implementation of the TransResUNet architecture, modified to be able to classify neoplasic and non-neoplastic polyps on the [BKAI-IGH NeoPolyp-Small dataset](https://www.kaggle.com/competitions/bkai-igh-neopolyp/data). Detailed implementation and result can be found in [the report](report.pdf).
+This is my implementation of the TransResUNet architecture, modified to be able to classify neoplasic and non-neoplastic polyps on the [BKAI-IGH NeoPolyp-Small dataset](https://www.kaggle.com/competitions/bkai-igh-neopolyp/data). Detailed implementation and result can be found in [the report](report_compressed.pdf).
 
 Original paper link: [TransResU-Net: Transformer based ResU-Net for Real-Time Colonoscopy Polyp Segmentation](https://arxiv.org/pdf/2206.08985.pdf)
 
