@@ -162,7 +162,7 @@ cython_debug/
 #.idea/
 
 # TODO: comment this out on last commit
-checkpoints/
+# checkpoints/
 data/
 wandb/
 train_log.txt

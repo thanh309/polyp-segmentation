@@ -1,0 +1,1 @@
+The model checkpoints should be put here.
