@@ -67,7 +67,7 @@ The training can be monitored in real-time using [Weights & Biases](https://wand
 
 ![run-res](img/run-res.png)
 
-If you want to trach the training process in your account, first login to W&B
+If you want to track the training process in your account, first login to W&B
 
 ```bash
 wandb login
